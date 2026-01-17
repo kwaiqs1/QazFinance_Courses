@@ -1,8 +1,8 @@
 import json
 import logging
-import os
-import urllib.request
-import urllib.error
+import re
+from urllib import request as urlrequest
+from urllib.error import HTTPError, URLError
 
 from django.conf import settings
 from django.core.mail.backends.base import BaseEmailBackend
@@ -10,80 +10,110 @@ from django.core.mail.backends.base import BaseEmailBackend
 logger = logging.getLogger(__name__)
 
 
-class ResendEmailBackend(BaseEmailBackend):
+def _parse_name_email(value: str):
     """
-    Django Email Backend, который отправляет письма через Resend API (HTTPS),
-    а не через SMTP. Это обходит блокировки SMTP на Railway.
+    Parses:
+      "Name <email@domain.com>" -> ("Name", "email@domain.com")
+      "email@domain.com" -> (None, "email@domain.com")
+    """
+    if not value:
+        return None, None
+    m = re.match(r'^\s*(?:"?([^"]*)"?\s*)?<([^>]+)>\s*$', value)
+    if m:
+        name = (m.group(1) or "").strip() or None
+        email = m.group(2).strip()
+        return name, email
+    return None, value.strip()
+
+
+class SendGridAPIBackend(BaseEmailBackend):
+    """
+    Django email backend that sends emails via SendGrid v3 HTTP API.
+    Requires env var SENDGRID_API_KEY.
     """
 
-    API_URL = "https://api.resend.com/emails"
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.api_key = (os.getenv("RESEND_API_KEY") or "").strip()
+    api_url = "https://api.sendgrid.com/v3/mail/send"
 
     def send_messages(self, email_messages):
         if not email_messages:
             return 0
 
-        if not self.api_key:
-            msg = "RESEND_API_KEY is not set"
+        api_key = getattr(settings, "SENDGRID_API_KEY", "") or ""
+        if not api_key:
             if self.fail_silently:
-                logger.error(msg)
                 return 0
-            raise RuntimeError(msg)
+            raise RuntimeError("SENDGRID_API_KEY is not set")
 
-        timeout = int(getattr(settings, "EMAIL_TIMEOUT", 10))
-        sent = 0
+        sent_count = 0
 
         for message in email_messages:
             try:
-                # Текст письма
-                text_body = message.body or ""
+                from_name, from_email = _parse_name_email(message.from_email or settings.DEFAULT_FROM_EMAIL)
+                if not from_email:
+                    raise RuntimeError("DEFAULT_FROM_EMAIL is empty or invalid")
 
-                # Если есть HTML-альтернатива — отправим и её
-                html_body = None
+                # content: try HTML alternative first, fallback to text
+                html = None
                 if getattr(message, "alternatives", None):
-                    for content, mimetype in message.alternatives:
+                    for alt_body, mimetype in message.alternatives:
                         if mimetype == "text/html":
-                            html_body = content
+                            html = alt_body
                             break
 
+                contents = []
+                if message.body:
+                    contents.append({"type": "text/plain", "value": message.body})
+                if html:
+                    contents.append({"type": "text/html", "value": html})
+                if not contents:
+                    contents = [{"type": "text/plain", "value": ""}]
+
                 payload = {
-                    "from": message.from_email,
-                    "to": message.to,
-                    "subject": message.subject or "",
+                    "personalizations": [
+                        {
+                            "to": [{"email": addr} for addr in (message.to or [])],
+                            "subject": message.subject or "",
+                        }
+                    ],
+                    "from": {"email": from_email, **({"name": from_name} if from_name else {})},
+                    "content": contents,
                 }
-                if html_body:
-                    payload["html"] = html_body
-                    if text_body:
-                        payload["text"] = text_body
-                else:
-                    payload["text"] = text_body
 
                 data = json.dumps(payload).encode("utf-8")
+                req = urlrequest.Request(
+                    self.api_url,
+                    data=data,
+                    method="POST",
+                    headers={
+                        "Authorization": f"Bearer {api_key}",
+                        "Content-Type": "application/json",
+                    },
+                )
 
-                req = urllib.request.Request(self.API_URL, data=data, method="POST")
-                req.add_header("Authorization", f"Bearer {self.api_key}")
-                req.add_header("Content-Type", "application/json")
-
-                with urllib.request.urlopen(req, timeout=timeout) as resp:
-                    status = getattr(resp, "status", 200)
-                    if 200 <= status < 300:
-                        sent += 1
-                        logger.info("Resend: email sent to=%s subject=%s", message.to, message.subject)
+                with urlrequest.urlopen(req, timeout=getattr(self, "timeout", 10)) as resp:
+                    # SendGrid returns 202 Accepted on success
+                    if 200 <= resp.status < 300:
+                        sent_count += 1
+                        logger.info("SendGrid: sent to=%s subject=%s", message.to, message.subject)
                     else:
-                        body = resp.read().decode("utf-8", errors="ignore")
-                        err = f"Resend API error: HTTP {status} body={body}"
-                        if self.fail_silently:
-                            logger.error(err)
-                        else:
-                            raise RuntimeError(err)
+                        raise RuntimeError(f"SendGrid unexpected status: {resp.status}")
 
+            except HTTPError as e:
+                body = ""
+                try:
+                    body = e.read().decode("utf-8", errors="replace")
+                except Exception:
+                    pass
+                logger.error("SendGrid HTTPError %s %s body=%s", e.code, e.reason, body)
+                if not self.fail_silently:
+                    raise
+            except URLError as e:
+                logger.error("SendGrid URLError: %r", e)
+                if not self.fail_silently:
+                    raise
             except Exception as e:
-                if self.fail_silently:
-                    logger.exception("Resend send failed: %r", e)
-                else:
+                logger.error("SendGrid send failed: %r", e)
+                if not self.fail_silently:
                     raise
 
-        return sent
+        return sent_count
