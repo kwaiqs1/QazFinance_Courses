@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+{% block title %}QazFinance Courses{% endblock %}
+
+{% block content %}
+<div class="row g-4 align-items-stretch">
+  <div class="col-lg-7">
+    <div class="hero-card p-4 p-lg-5 h-100">
+      <div class="d-flex align-items-center gap-2 mb-3">
+        <span class="pill"><i class="bi bi-graph-up-arrow"></i> Financial literacy</span>
+        <span class="pill"><i class="bi bi-shield-check"></i> Practical skills</span>
+        <span class="pill"><i class="bi bi-lightning-charge"></i> Instant feedback</span>
+      </div>
+
+      <h1 class="display-6 fw-bold text-white mb-3">Учись финансовой грамотности, основам экономики и инвестиции просто и легко прямо у нас.</h1>
+      <p class="text-white-50 fs-5 mb-4">
+        Курсы QazFinance построены по модели: цель → теория → практика → кейс → итог.
+        Прогресс и рейтинг считаются автоматически по тестам.
+      </p>
+
+      <div class="d-flex flex-wrap gap-2">
+        {% if user.is_authenticated %}
+          <a class="btn btn-gold btn-lg" href="/academy/"><i class="bi bi-mortarboard"></i> Перейти к курсам</a>
+          <a class="btn btn-outline-light btn-lg" href="/accounts/profile/"><i class="bi bi-person"></i> Профиль</a>
+        {% else %}
+          <a class="btn btn-gold btn-lg" href="/accounts/signup/"><i class="bi bi-person-plus"></i> Создать аккаунт</a>
+          <a class="btn btn-outline-light btn-lg" href="/accounts/login/"><i class="bi bi-box-arrow-in-right"></i> Войти</a>
+        {% endif %}
+      </div>
+
+      <div class="mt-4 d-flex flex-column flex-md-row gap-3">
+        <div class="stat">
+          <div class="stat-num">Удобная панель</div>
+          <div class="stat-label">Навигация уроков</div>
+        </div>
+        <div class="stat">
+          <div class="stat-num">Практика</div>
+          <div class="stat-label">в каждом уроке</div>
+        </div>
+        <div class="stat">
+          <div class="stat-num">Rating</div>
+          <div class="stat-label">Система оценивания профилей</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-5">
+    <div class="glass-card p-4 h-100">
+      <h2 class="h5 text-white mb-3">Как выглядит платформа</h2>
+      <ul class="feature-list mb-0">
+        <li><i class="bi bi-check2-circle"></i> Чёткая структура урока (6 блоков)</li>
+        <li><i class="bi bi-check2-circle"></i> Моментальная проверка тестов</li>
+        <li><i class="bi bi-check2-circle"></i> Прогресс + лучший результат по каждому уроку</li>
+        <li><i class="bi bi-check2-circle"></i> Публичные профили и поиск людей</li>
+        <li><i class="bi bi-check2-circle"></i> Контент управляется через Django Admin</li>
+      </ul>
+
+      <div class="divider my-4"></div>
+
+      <div class="d-flex align-items-center justify-content-between">
+        <div>
+          <div class="text-white fw-semibold">Готово для продакшн‑доработки</div>
+          <div class="text-white-50 small">SMTP, дизайн‑система, расширяемая структура</div>
+        </div>
+        <span class="badge rounded-pill text-bg-dark border border-light-subtle">v1 MVP</span>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

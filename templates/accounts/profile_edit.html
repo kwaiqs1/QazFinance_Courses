@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% block title %}Edit profile — QazFinance{% endblock %}
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-lg-8">
+    <div class="glass-card p-4 p-lg-5">
+      <h1 class="h4 text-white mb-3">Edit profile</h1>
+      <form method="post" class="form-dark">
+        {% csrf_token %}
+
+        <div class="row g-3">
+          <div class="col-md-8">
+            <label class="form-label text-white-50">{{ form.full_name.label }}</label>
+            {{ form.full_name }}
+          </div>
+          <div class="col-md-4">
+            <label class="form-label text-white-50">{{ form.age.label }}</label>
+            {{ form.age }}
+          </div>
+
+          <div class="col-md-6">
+            <label class="form-label text-white-50">{{ form.nickname.label }}</label>
+            {{ form.nickname }}
+          </div>
+          <div class="col-md-6">
+            <label class="form-label text-white-50">{{ form.school.label }}</label>
+            {{ form.school }}
+          </div>
+
+          <div class="col-md-6">
+            <label class="form-label text-white-50">{{ form.country.label }}</label>
+            {{ form.country }}
+          </div>
+          <div class="col-md-6">
+            <label class="form-label text-white-50">{{ form.city.label }}</label>
+            {{ form.city }}
+          </div>
+        </div>
+
+        <div class="d-flex gap-2 mt-4">
+          <button class="btn btn-gold" type="submit"><i class="bi bi-check2"></i> Сохранить</button>
+          <a class="btn btn-outline-light" href="/accounts/profile/">Отмена</a>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

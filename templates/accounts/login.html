@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block title %}Вход — QazFinance{% endblock %}
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-md-6 col-lg-5">
+    <div class="glass-card p-4">
+      <h1 class="h4 text-white mb-3">Вход</h1>
+      <form method="post" class="form-dark">
+        {% csrf_token %}
+        {% if form.non_field_errors %}
+          <div class="alert alert-danger">{{ form.non_field_errors }}</div>
+        {% endif %}
+
+        <div class="mb-3">
+          <label class="form-label text-white-50">{{ form.email.label }}</label>
+          {{ form.email }}
+          {% if form.email.errors %}<div class="text-danger small mt-1">{{ form.email.errors }}</div>{% endif %}
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label text-white-50">{{ form.password.label }}</label>
+          {{ form.password }}
+          {% if form.password.errors %}<div class="text-danger small mt-1">{{ form.password.errors }}</div>{% endif %}
+        </div>
+
+        <button class="btn btn-gold w-100" type="submit"><i class="bi bi-box-arrow-in-right"></i> Войти</button>
+
+        <div class="mt-3 text-center">
+          <a class="link-light link-underline-opacity-0" href="/accounts/signup/">Нет аккаунта? Регистрация</a>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

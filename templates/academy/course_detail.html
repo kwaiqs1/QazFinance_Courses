@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+{% load academy_extras %}
+{% block title %}{{ course.title }} — QazFinance{% endblock %}
+{% block content %}
+
+<div class="row g-4">
+  <div class="col-lg-4">
+    <div class="glass-card p-4 sticky-lg-top" style="top: 92px;">
+      <div class="d-flex align-items-start justify-content-between gap-2">
+        <div>
+          <div class="text-white fw-bold fs-5">{{ course.title }}</div>
+          <div class="text-white-50 small mt-2">{{ course.description|default:"Описание не добавлено." }}</div>
+        </div>
+        <span class="tag">Course</span>
+      </div>
+
+      <div class="divider my-4"></div>
+
+      {% if enrolled %}
+        <div class="alert alert-success mb-0">
+          <b>Вы записаны</b> — прогресс и рейтинг будут считаться автоматически.
+        </div>
+      {% else %}
+        <p class="text-white-50">Запишитесь, чтобы открыть уроки и отслеживать прогресс.</p>
+        <a class="btn btn-gold w-100" href="/academy/course/{{ course.slug }}/enroll/"><i class="bi bi-check2-circle"></i> Записаться на курс</a>
+      {% endif %}
+
+      <div class="mt-4">
+        <a class="btn btn-outline-light w-100" href="/academy/"><i class="bi bi-arrow-left"></i> К списку курсов</a>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-8">
+    <div class="glass-card p-4 p-lg-5">
+      <h2 class="h5 text-white mb-3">Units & Lessons</h2>
+
+      <div class="accordion accordion-dark" id="unitsAcc">
+        {% for u in units %}
+          <div class="accordion-item">
+            <h2 class="accordion-header" id="h{{ u.id }}">
+              <button class="accordion-button {% if not forloop.first %}collapsed{% endif %}" type="button" data-bs-toggle="collapse" data-bs-target="#c{{ u.id }}">
+                <div class="w-100 d-flex justify-content-between align-items-center">
+                  <span class="fw-semibold">{{ u.title }}</span>
+                  <span class="text-white-50 small">Unit {{ u.order }}</span>
+                </div>
+              </button>
+            </h2>
+            <div id="c{{ u.id }}" class="accordion-collapse collapse {% if forloop.first %}show{% endif %}" data-bs-parent="#unitsAcc">
+              <div class="accordion-body">
+                <div class="list-group list-group-flush">
+                  {% for l in u.lessons.all %}
+                    {% with p=progress_map|get_item:l.id %}
+                    <a class="lesson-row list-group-item list-group-item-action d-flex align-items-center justify-content-between"
+                       href="{% if enrolled %}/academy/course/{{ course.slug }}/lesson/{{ l.id }}/{% else %}#{% endif %}">
+                      <div class="d-flex align-items-center gap-3">
+                        <span class="lesson-dot {% if p and p.completed %}done{% elif p %}mid{% else %}none{% endif %}"></span>
+                        <div>
+                          <div class="fw-semibold text-white">{{ l.title }}</div>
+                          <div class="text-white-50 small">
+                            {% if p %}
+                              best: {{ p.best_score|floatformat:0 }}% • last: {{ p.last_score|floatformat:0 }}%
+                            {% else %}
+                              Not started
+                            {% endif %}
+                          </div>
+                        </div>
+                      </div>
+                      <span class="badge text-bg-dark border border-light-subtle">Lesson {{ l.order }}</span>
+                    </a>
+                    {% endwith %}
+                  {% endfor %}
+                </div>
+
+                {% if not u.lessons.all %}
+                  <div class="text-white-50">Уроки пока не добавлены.</div>
+                {% endif %}
+              </div>
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+
+    </div>
+  </div>
+</div>
+
+{% endblock %}

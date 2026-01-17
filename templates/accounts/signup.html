@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+{% block title %}Регистрация — QazFinance{% endblock %}
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-lg-8">
+    <div class="glass-card p-4 p-lg-5">
+      <h1 class="h4 text-white mb-1">Регистрация</h1>
+      <p class="text-white-50 mb-4">Создайте профиль и начните проходить уроки с рейтингом и прогрессом.</p>
+
+      <form method="post" class="form-dark">
+        {% csrf_token %}
+        {% if form.non_field_errors %}
+          <div class="alert alert-danger">{{ form.non_field_errors }}</div>
+        {% endif %}
+
+        <div class="row g-3">
+          <div class="col-md-6">
+            <label class="form-label text-white-50">{{ form.email.label }}</label>
+            {{ form.email }}
+            {% if form.email.errors %}<div class="text-danger small mt-1">{{ form.email.errors }}</div>{% endif %}
+          </div>
+          <div class="col-md-6">
+            <label class="form-label text-white-50">{{ form.nickname.label }}</label>
+            {{ form.nickname }}
+            {% if form.nickname.errors %}<div class="text-danger small mt-1">{{ form.nickname.errors }}</div>{% endif %}
+          </div>
+
+          <div class="col-md-8">
+            <label class="form-label text-white-50">{{ form.full_name.label }}</label>
+            {{ form.full_name }}
+            {% if form.full_name.errors %}<div class="text-danger small mt-1">{{ form.full_name.errors }}</div>{% endif %}
+          </div>
+          <div class="col-md-4">
+            <label class="form-label text-white-50">{{ form.age.label }}</label>
+            {{ form.age }}
+            {% if form.age.errors %}<div class="text-danger small mt-1">{{ form.age.errors }}</div>{% endif %}
+          </div>
+
+          <div class="col-md-6">
+            <label class="form-label text-white-50">{{ form.school.label }}</label>
+            {{ form.school }}
+            {% if form.school.errors %}<div class="text-danger small mt-1">{{ form.school.errors }}</div>{% endif %}
+          </div>
+          <div class="col-md-3">
+            <label class="form-label text-white-50">{{ form.country.label }}</label>
+            {{ form.country }}
+            {% if form.country.errors %}<div class="text-danger small mt-1">{{ form.country.errors }}</div>{% endif %}
+          </div>
+          <div class="col-md-3">
+            <label class="form-label text-white-50">{{ form.city.label }}</label>
+            {{ form.city }}
+            {% if form.city.errors %}<div class="text-danger small mt-1">{{ form.city.errors }}</div>{% endif %}
+          </div>
+
+          <div class="col-md-6">
+            <label class="form-label text-white-50">{{ form.password1.label }}</label>
+            {{ form.password1 }}
+            {% if form.password1.errors %}<div class="text-danger small mt-1">{{ form.password1.errors }}</div>{% endif %}
+          </div>
+          <div class="col-md-6">
+            <label class="form-label text-white-50">{{ form.password2.label }}</label>
+            {{ form.password2 }}
+            {% if form.password2.errors %}<div class="text-danger small mt-1">{{ form.password2.errors }}</div>{% endif %}
+          </div>
+        </div>
+
+        <button class="btn btn-gold w-100 mt-4" type="submit"><i class="bi bi-person-plus"></i> Создать аккаунт</button>
+        <div class="mt-3 text-center">
+          <a class="link-light link-underline-opacity-0" href="/accounts/login/">Уже есть аккаунт? Войти</a>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% load academy_extras %}
+{% block title %}Курсы — QazFinance{% endblock %}
+{% block content %}
+<div class="d-flex align-items-end justify-content-between flex-wrap gap-3 mb-4">
+  <div>
+    <h1 class="h3 text-white mb-1">Курсы</h1>
+    <div class="text-white-50">Выбирайте курс и учитесь по структуре: цель → теория → практика → кейс → итог.</div>
+  </div>
+  <div class="badge text-bg-dark border border-light-subtle px-3 py-2">
+    Ваш рейтинг: <span class="fw-semibold">{{ user.rating|floatformat:1 }}%</span>
+  </div>
+</div>
+
+<div class="row g-3">
+  {% for c in courses %}
+    {% with enroll=enrollments|get_item:c.id %}
+    <div class="col-md-6 col-xl-4">
+      <div class="course-card p-4 h-100">
+        <div class="d-flex align-items-start justify-content-between gap-2">
+          <div>
+            <div class="text-white fw-bold fs-5">{{ c.title }}</div>
+            <div class="text-white-50 small mt-1">{{ c.description|default:"—"|truncatechars:110 }}</div>
+          </div>
+          <span class="tag">Finance</span>
+        </div>
+
+        <div class="divider my-4"></div>
+
+        <div class="d-flex justify-content-between align-items-center">
+          {% if enroll %}
+            <span class="badge text-bg-success">Вы записаны</span>
+          {% else %}
+            <span class="badge text-bg-secondary">Не записаны</span>
+          {% endif %}
+          <a class="btn btn-gold btn-sm" href="/academy/course/{{ c.slug }}/"><i class="bi bi-arrow-right-circle"></i> Открыть</a>
+        </div>
+      </div>
+    </div>
+    {% endwith %}
+  {% endfor %}
+</div>
+{% endblock %}

@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block title %}People search — QazFinance{% endblock %}
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-lg-9">
+    <div class="glass-card p-4 p-lg-5">
+      <h1 class="h4 text-white mb-2">People search</h1>
+      <p class="text-white-50 mb-4">Найдите пользователей по ФИО, никнейму или email.</p>
+
+      <form class="d-flex gap-2 mb-4" method="get">
+        <input class="form-control form-control-lg input-dark" name="q" value="{{ q }}" placeholder="Например: Amina, Nursaya, umbetali@...">
+        <button class="btn btn-gold btn-lg" type="submit"><i class="bi bi-search"></i></button>
+      </form>
+
+      {% if q and not users %}
+        <div class="alert alert-warning">Ничего не найдено по запросу “{{ q }}”.</div>
+      {% endif %}
+
+      <div class="row g-3">
+        {% for u in users %}
+          <div class="col-md-6">
+            <a class="user-card p-3 d-block text-decoration-none" href="/accounts/people/{{ u.id }}/">
+              <div class="d-flex align-items-center gap-3">
+                <div class="avatar">{{ u.nickname|slice:":2"|upper }}</div>
+                <div class="flex-grow-1">
+                  <div class="text-white fw-semibold">{{ u.full_name }}</div>
+                  <div class="text-white-50 small">@{{ u.nickname }} • {{ u.country }} {{ u.city }}</div>
+                </div>
+                <div class="badge text-bg-dark border border-light-subtle px-3 py-2">{{ u.rating|floatformat:1 }}%</div>
+              </div>
+            </a>
+          </div>
+        {% endfor %}
+      </div>
+
+    </div>
+  </div>
+</div>
+{% endblock %}

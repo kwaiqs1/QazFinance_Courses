@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block title %}Подтверждение email — QazFinance{% endblock %}
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-lg-8">
+    <div class="glass-card p-4 p-lg-5">
+      <h1 class="h4 text-white mb-2">Подтвердите email</h1>
+      <p class="text-white-50 mb-4">
+        Мы отправили письмо со ссылкой на подтверждение.
+        После подтверждения откроются курсы и прогресс.
+      </p>
+
+      <div class="d-flex flex-wrap gap-2">
+        <a class="btn btn-gold" href="/academy/"><i class="bi bi-mortarboard"></i> К курсам</a>
+        <a class="btn btn-outline-light" href="/accounts/verify/resend/"><i class="bi bi-envelope"></i> Отправить письмо ещё раз</a>
+        <a class="btn btn-outline-light" href="/accounts/profile/"><i class="bi bi-person"></i> Профиль</a>
+      </div>
+
+      <div class="mt-4 text-white-50 small">
+        Если вы используете <b>console email backend</b> в .env, ссылка появится в терминале после регистрации/повторной отправки.
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block title %}{{ person.full_name }} — Profile{% endblock %}
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-lg-9">
+    <div class="glass-card p-4 p-lg-5">
+      <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3">
+        <div class="d-flex align-items-center gap-3">
+          <div class="avatar avatar-lg">{{ person.nickname|slice:":2"|upper }}</div>
+          <div>
+            <div class="h4 text-white mb-0">{{ person.full_name }}</div>
+            <div class="text-white-50">@{{ person.nickname }} • {{ person.country }} {{ person.city }}</div>
+          </div>
+        </div>
+
+        <div class="text-end">
+          <div class="text-white-50 small">Profile rating</div>
+          <div class="display-6 text-white fw-bold">{{ person.rating|floatformat:1 }}%</div>
+        </div>
+      </div>
+
+      <div class="divider my-4"></div>
+
+      <div class="row g-3">
+        <div class="col-md-6"><div class="info-tile"><div class="k">School</div><div class="v">{{ person.school|default:"—" }}</div></div></div>
+        <div class="col-md-3"><div class="info-tile"><div class="k">Age</div><div class="v">{{ person.age|default:"—" }}</div></div></div>
+        <div class="col-md-3"><div class="info-tile"><div class="k">Email verified</div><div class="v">{% if person.email_verified %}Yes{% else %}No{% endif %}</div></div></div>
+      </div>
+
+      <div class="mt-4">
+        <a class="btn btn-outline-light" href="/accounts/people/"><i class="bi bi-arrow-left"></i> Back to search</a>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
