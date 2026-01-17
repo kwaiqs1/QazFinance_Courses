@@ -1,24 +1,70 @@
+import logging
+import threading
+
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth import login, logout
 from django.contrib.auth.decorators import login_required
-from django.core.mail import send_mail
+from django.core.mail import EmailMessage, get_connection
 from django.db.models import Q
 from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse
-
 from django.views.decorators.csrf import ensure_csrf_cookie
 
 from .forms import SignUpForm, LoginForm, ProfileEditForm
 from .models import User
 from .tokens import make_token, verify_token
 
-def _send_verification_email(request, user: User):
+logger = logging.getLogger(__name__)
+
+
+def _build_verify_url(user: User) -> str:
     token = make_token(user.id)
-    verify_url = settings.SITE_URL + reverse("accounts:verify_email", args=[token])
+    base = (settings.SITE_URL or "").rstrip("/")
+    return base + reverse("accounts:verify_email", args=[token])
+
+
+def _send_verification_email_sync(user: User) -> None:
+    """
+    Синхронная отправка письма.
+    Важно: НЕ вызывать её напрямую из HTTP-запроса в проде — только через async-обёртку ниже.
+    """
+    verify_url = _build_verify_url(user)
     subject = "QazFinance — подтверждение email"
-    body = f"Здравствуйте, {user.full_name}!\n\nПодтвердите email по ссылке:\n{verify_url}\n\nЕсли вы не регистрировались, просто проигнорируйте это письмо."
-    send_mail(subject, body, settings.DEFAULT_FROM_EMAIL, [user.email], fail_silently=False)
+    body = (
+        f"Здравствуйте, {user.full_name}!\n\n"
+        f"Подтвердите email по ссылке:\n{verify_url}\n\n"
+        "Если вы не регистрировались, просто проигнорируйте это письмо."
+    )
+
+    # Явно прокидываем timeout в backend (на случай, если settings.EMAIL_TIMEOUT не применяется как ожидается)
+    timeout = getattr(settings, "EMAIL_TIMEOUT", 10)
+
+    try:
+        connection = get_connection(fail_silently=False, timeout=timeout)
+        msg = EmailMessage(
+            subject=subject,
+            body=body,
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            to=[user.email],
+            connection=connection,
+        )
+        msg.send(fail_silently=False)
+        logger.info("Verification email sent to %s (user_id=%s)", user.email, user.id)
+    except Exception as e:
+        # НИКАКИХ raise — иначе снова будут 500 и воркер-таймауты
+        logger.exception(
+            "Verification email FAILED for %s (user_id=%s). Reason: %r",
+            user.email, user.id, e
+        )
+
+
+def _send_verification_email_async(user: User) -> None:
+    """
+    Асинхронная отправка — чтобы HTTP-ответ не ждал SMTP.
+    """
+    t = threading.Thread(target=_send_verification_email_sync, args=(user,), daemon=True)
+    t.start()
 
 
 @ensure_csrf_cookie
@@ -30,9 +76,18 @@ def signup_view(request):
         form = SignUpForm(request.POST)
         if form.is_valid():
             user = form.save()
+
+            # Можно логинить сразу (как сейчас), это ок
             login(request, user)
-            _send_verification_email(request, user)
-            messages.success(request, "Аккаунт создан. Мы отправили письмо для подтверждения email.")
+
+            # КРИТИЧНО: отправка письма — в фоне, без блокировки запроса
+            _send_verification_email_async(user)
+
+            messages.success(
+                request,
+                "Аккаунт создан. Мы отправили письмо для подтверждения email. "
+                "Если письмо не пришло — проверьте Spam/Promotions и нажмите «Отправить ещё раз»."
+            )
             return redirect("accounts:verify_notice")
     else:
         form = SignUpForm()
@@ -56,13 +111,16 @@ def login_view(request):
 
     return render(request, "accounts/login.html", {"form": form})
 
+
 def logout_view(request):
     logout(request)
     return redirect("home")
 
+
 @login_required
 def verify_notice_view(request):
     return render(request, "accounts/verify_notice.html")
+
 
 @login_required
 def resend_verification_view(request):
@@ -70,9 +128,13 @@ def resend_verification_view(request):
     if user.email_verified:
         messages.info(request, "Email уже подтверждён.")
         return redirect("academy:courses")
-    _send_verification_email(request, user)
-    messages.success(request, "Письмо отправлено повторно.")
+
+    # тоже асинхронно, чтобы не зависало
+    _send_verification_email_async(user)
+
+    messages.success(request, "Письмо отправлено повторно. Проверьте почту и папку Spam.")
     return redirect("accounts:verify_notice")
+
 
 def verify_email_view(request, token: str):
     user_id = verify_token(token)
@@ -85,9 +147,11 @@ def verify_email_view(request, token: str):
     messages.success(request, "Email подтверждён. Добро пожаловать в QazFinance Academy.")
     return render(request, "accounts/verify_email.html", {"status": "ok"})
 
+
 @login_required
 def profile_view(request):
     return render(request, "accounts/profile.html", {"profile_user": request.user})
+
 
 @login_required
 def profile_edit_view(request):
@@ -99,7 +163,9 @@ def profile_edit_view(request):
             return redirect("accounts:profile")
     else:
         form = ProfileEditForm(instance=request.user)
+
     return render(request, "accounts/profile_edit.html", {"form": form})
+
 
 @login_required
 def people_search_view(request):
@@ -111,7 +177,9 @@ def people_search_view(request):
         ).order_by("-rating")[:50]
     return render(request, "accounts/people_search.html", {"q": q, "users": users})
 
+
 @login_required
 def person_detail_view(request, user_id: int):
     person = get_object_or_404(User, id=user_id)
     return render(request, "accounts/person_detail.html", {"person": person})
+
