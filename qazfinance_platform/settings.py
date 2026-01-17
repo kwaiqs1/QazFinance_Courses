@@ -107,3 +107,4 @@ AUTHENTICATION_BACKENDS = ['accounts.auth_backend.EmailBackend']
 
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 CSRF_TRUSTED_ORIGINS = [o.strip() for o in os.getenv("CSRF_TRUSTED_ORIGINS", "").split(",") if o.strip()]
+EMAIL_TIMEOUT = int(os.getenv("EMAIL_TIMEOUT", "10"))
