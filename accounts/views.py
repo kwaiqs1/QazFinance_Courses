@@ -5,7 +5,7 @@ from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth import login, logout
 from django.contrib.auth.decorators import login_required
-from django.core.mail import EmailMessage, get_connection
+from django.core.mail import EmailMessage
 from django.db.models import Q
 from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse
@@ -25,10 +25,6 @@ def _build_verify_url(user: User) -> str:
 
 
 def _send_verification_email_sync(user: User) -> None:
-    """
-    Синхронная отправка письма.
-    Важно: НЕ вызывать её напрямую из HTTP-запроса в проде — только через async-обёртку ниже.
-    """
     verify_url = _build_verify_url(user)
     subject = "QazFinance — подтверждение email"
     body = (
@@ -37,32 +33,20 @@ def _send_verification_email_sync(user: User) -> None:
         "Если вы не регистрировались, просто проигнорируйте это письмо."
     )
 
-    # Явно прокидываем timeout в backend (на случай, если settings.EMAIL_TIMEOUT не применяется как ожидается)
-    timeout = getattr(settings, "EMAIL_TIMEOUT", 10)
-
     try:
-        connection = get_connection(fail_silently=False, timeout=timeout)
         msg = EmailMessage(
             subject=subject,
             body=body,
             from_email=settings.DEFAULT_FROM_EMAIL,
             to=[user.email],
-            connection=connection,
         )
-        msg.send(fail_silently=False)
-        logger.info("Verification email sent to %s (user_id=%s)", user.email, user.id)
+        sent = msg.send(fail_silently=False)
+        logger.info("SMTP email send result=%s to=%s (user_id=%s)", sent, user.email, user.id)
     except Exception as e:
-        # НИКАКИХ raise — иначе снова будут 500 и воркер-таймауты
-        logger.exception(
-            "Verification email FAILED for %s (user_id=%s). Reason: %r",
-            user.email, user.id, e
-        )
+        logger.exception("Verification email FAILED for %s (user_id=%s). Reason: %r", user.email, user.id, e)
 
 
 def _send_verification_email_async(user: User) -> None:
-    """
-    Асинхронная отправка — чтобы HTTP-ответ не ждал SMTP.
-    """
     t = threading.Thread(target=_send_verification_email_sync, args=(user,), daemon=True)
     t.start()
 
@@ -76,17 +60,14 @@ def signup_view(request):
         form = SignUpForm(request.POST)
         if form.is_valid():
             user = form.save()
-
-            # Можно логинить сразу (как сейчас), это ок
             login(request, user)
 
-            # КРИТИЧНО: отправка письма — в фоне, без блокировки запроса
             _send_verification_email_async(user)
 
             messages.success(
                 request,
                 "Аккаунт создан. Мы отправили письмо для подтверждения email. "
-                "Если письмо не пришло — проверьте Spam/Promotions и нажмите «Отправить ещё раз»."
+                "Если письмо не пришло — проверьте Spam/Promotions."
             )
             return redirect("accounts:verify_notice")
     else:
@@ -129,9 +110,7 @@ def resend_verification_view(request):
         messages.info(request, "Email уже подтверждён.")
         return redirect("academy:courses")
 
-    # тоже асинхронно, чтобы не зависало
     _send_verification_email_async(user)
-
     messages.success(request, "Письмо отправлено повторно. Проверьте почту и папку Spam.")
     return redirect("accounts:verify_notice")
 
@@ -182,4 +161,3 @@ def people_search_view(request):
 def person_detail_view(request, user_id: int):
     person = get_object_or_404(User, id=user_id)
     return render(request, "accounts/person_detail.html", {"person": person})
-
