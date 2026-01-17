@@ -81,39 +81,35 @@ STATIC_URL = "static/"
 STATICFILES_DIRS = [BASE_DIR / "static"]
 STATIC_ROOT = BASE_DIR / "staticfiles"
 STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
-DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
+DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 AUTH_USER_MODEL = "accounts.User"
 
 LOGIN_URL = "accounts:login"
 LOGIN_REDIRECT_URL = "academy:courses"
 LOGOUT_REDIRECT_URL = "home"
 
-# Email
+# Email (SMTP only, "как в локалке")
 EMAIL_BACKEND = os.getenv("EMAIL_BACKEND", "django.core.mail.backends.smtp.EmailBackend")
 EMAIL_HOST = os.getenv("EMAIL_HOST", "smtp.gmail.com")
 EMAIL_PORT = int(os.getenv("EMAIL_PORT", "587"))
 EMAIL_USE_TLS = os.getenv("EMAIL_USE_TLS", "True").lower() == "true"
 EMAIL_HOST_USER = os.getenv("EMAIL_HOST_USER", "")
 EMAIL_HOST_PASSWORD = os.getenv("EMAIL_HOST_PASSWORD", "")
+EMAIL_TIMEOUT = int(os.getenv("EMAIL_TIMEOUT", "10"))
 
 DEFAULT_FROM_EMAIL = os.getenv(
     "DEFAULT_FROM_EMAIL",
     f"QazFinance <{os.getenv('EMAIL_HOST_USER','no-reply@qazfinance.local')}>"
 )
 
-
 SITE_URL = os.getenv("SITE_URL", "http://127.0.0.1:8000")
 REQUIRE_EMAIL_VERIFICATION = os.getenv("REQUIRE_EMAIL_VERIFICATION", "True").lower() == "true"
 
-AUTHENTICATION_BACKENDS = ['accounts.auth_backend.EmailBackend']
-
-
+AUTHENTICATION_BACKENDS = ["accounts.auth_backend.EmailBackend"]
 
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 CSRF_TRUSTED_ORIGINS = [o.strip() for o in os.getenv("CSRF_TRUSTED_ORIGINS", "").split(",") if o.strip()]
-EMAIL_TIMEOUT = int(os.getenv("EMAIL_TIMEOUT", "10"))
-
 
 LOGGING = {
     "version": 1,
@@ -126,10 +122,3 @@ LOGGING = {
         "level": "INFO",
     },
 }
-
-
-
-SENDGRID_API_KEY = os.getenv("SENDGRID_API_KEY", "")
-
-if SENDGRID_API_KEY:
-    EMAIL_BACKEND = "qazfinance_platform.email_backends.SendGridAPIBackend"
