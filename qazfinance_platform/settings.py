@@ -126,3 +126,10 @@ LOGGING = {
         "level": "INFO",
     },
 }
+
+
+
+SENDGRID_API_KEY = os.getenv("SENDGRID_API_KEY", "")
+
+if SENDGRID_API_KEY:
+    EMAIL_BACKEND = "qazfinance_platform.email_backends.SendGridAPIBackend"
