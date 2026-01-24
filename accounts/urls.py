@@ -8,10 +8,6 @@ urlpatterns = [
     path("login/", views.login_view, name="login"),
     path("logout/", views.logout_view, name="logout"),
 
-    path("verify/", views.verify_notice_view, name="verify_notice"),
-    path("verify/resend/", views.resend_verification_view, name="resend_verification"),
-    path("verify/<str:token>/", views.verify_email_view, name="verify_email"),
-
     path("profile/", views.profile_view, name="profile"),
     path("profile/edit/", views.profile_edit_view, name="profile_edit"),
 
