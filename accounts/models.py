@@ -6,7 +6,7 @@ class UserManager(BaseUserManager):
     def create_user(self, email, password=None, **extra_fields):
         if not email:
             raise ValueError("Email is required")
-        email = self.normalize_email(email)
+        email = self.normalize_email(email).lower()
         user = self.model(email=email, **extra_fields)
         user.set_password(password)
         user.save(using=self._db)
@@ -33,7 +33,9 @@ class User(AbstractBaseUser, PermissionsMixin):
     city = models.CharField(max_length=128, blank=True)
 
     rating = models.FloatField(default=0.0)
-    email_verified = models.BooleanField(default=False)
+
+    # Верификации нет → по умолчанию True
+    email_verified = models.BooleanField(default=True)
 
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)
