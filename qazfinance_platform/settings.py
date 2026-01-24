@@ -4,7 +4,7 @@ import dj_database_url
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-# Optional .env loading
+# Optional .env loading (локально)
 try:
     from dotenv import load_dotenv
     load_dotenv(BASE_DIR / ".env")
@@ -89,36 +89,24 @@ LOGIN_URL = "accounts:login"
 LOGIN_REDIRECT_URL = "academy:courses"
 LOGOUT_REDIRECT_URL = "home"
 
-# Email (SMTP only, "как в локалке")
-EMAIL_BACKEND = os.getenv("EMAIL_BACKEND", "django.core.mail.backends.smtp.EmailBackend")
-EMAIL_HOST = os.getenv("EMAIL_HOST", "smtp.gmail.com")
-EMAIL_PORT = int(os.getenv("EMAIL_PORT", "587"))
-EMAIL_USE_TLS = os.getenv("EMAIL_USE_TLS", "True").lower() == "true"
-EMAIL_HOST_USER = os.getenv("EMAIL_HOST_USER", "")
-EMAIL_HOST_PASSWORD = os.getenv("EMAIL_HOST_PASSWORD", "")
-EMAIL_TIMEOUT = int(os.getenv("EMAIL_TIMEOUT", "10"))
-
-DEFAULT_FROM_EMAIL = os.getenv(
-    "DEFAULT_FROM_EMAIL",
-    f"QazFinance <{os.getenv('EMAIL_HOST_USER','no-reply@qazfinance.local')}>"
-)
-
-SITE_URL = os.getenv("SITE_URL", "http://127.0.0.1:8000")
-REQUIRE_EMAIL_VERIFICATION = os.getenv("REQUIRE_EMAIL_VERIFICATION", "True").lower() == "true"
-
 AUTHENTICATION_BACKENDS = ["accounts.auth_backend.EmailBackend"]
 
+# Railway / reverse proxy (https)
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 CSRF_TRUSTED_ORIGINS = [o.strip() for o in os.getenv("CSRF_TRUSTED_ORIGINS", "").split(",") if o.strip()]
+
+# Email verification выключена полностью
+REQUIRE_EMAIL_VERIFICATION = False
+
+# Чтобы “не слетало” и не казалось, что пароль пропал:
+# (пароль не истекает, истекает сессия/куки)
+SESSION_COOKIE_AGE = int(os.getenv("SESSION_COOKIE_AGE", str(60 * 60 * 24 * 30)))  # 30 дней
+SESSION_SAVE_EVERY_REQUEST = True
+SESSION_EXPIRE_AT_BROWSER_CLOSE = False
 
 LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,
-    "handlers": {
-        "console": {"class": "logging.StreamHandler"},
-    },
-    "root": {
-        "handlers": ["console"],
-        "level": "INFO",
-    },
+    "handlers": {"console": {"class": "logging.StreamHandler"}},
+    "root": {"handlers": ["console"], "level": "INFO"},
 }
