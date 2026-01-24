@@ -26,8 +26,12 @@ class SignUpForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        for name, f in self.fields.items():
+        for _, f in self.fields.items():
             _apply_bootstrap(f)
+
+    def clean_email(self):
+        email = (self.cleaned_data.get("email") or "").strip().lower()
+        return email
 
     def clean(self):
         cleaned = super().clean()
@@ -39,7 +43,13 @@ class SignUpForm(forms.ModelForm):
 
     def save(self, commit=True):
         user = super().save(commit=False)
+        user.email = (user.email or "").strip().lower()
         user.set_password(self.cleaned_data["password1"])
+
+        # Верификации больше нет — считаем email подтверждённым
+        if hasattr(user, "email_verified"):
+            user.email_verified = True
+
         if commit:
             user.save()
         return user
@@ -50,12 +60,12 @@ class LoginForm(forms.Form):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        for name, f in self.fields.items():
+        for _, f in self.fields.items():
             _apply_bootstrap(f)
 
     def clean(self):
         cleaned = super().clean()
-        email = cleaned.get("email")
+        email = (cleaned.get("email") or "").strip().lower()
         password = cleaned.get("password")
         if email and password:
             user = authenticate(email=email, password=password)
@@ -79,5 +89,5 @@ class ProfileEditForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        for name, f in self.fields.items():
+        for _, f in self.fields.items():
             _apply_bootstrap(f)
