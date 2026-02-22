@@ -3,11 +3,6 @@ from django.conf import settings
 from django.shortcuts import redirect
 
 def verified_required(view_func):
-    """
-    Backward-compatible decorator.
-    Раньше он блокировал доступ до подтверждения email.
-    Теперь email-верификации нет — просто требуем логин.
-    """
     @wraps(view_func)
     def _wrapped(request, *args, **kwargs):
         if not request.user.is_authenticated:
